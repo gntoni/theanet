@@ -20,6 +20,9 @@ import theano.tensor as T
 from theano.tensor.signal import downsample
 from theano.tensor.nnet import conv
 
+# Implementation of the ReLU activation function
+def relu(x):
+    return 0.5 * (x + abs(x))
 
 
 class LogisticRegression(object):
@@ -149,7 +152,7 @@ class LogisticRegression(object):
 
 class HiddenLayer(object):
     def __init__(self, rng, input, n_in, n_out, W=None, b=None,
-                 activation=T.tanh):
+                 activation=relu):
         """
         Typical hidden layer of a MLP: units are fully-connected and have
         sigmoidal activation function. Weight matrix W is of shape (n_in,n_out)
@@ -173,7 +176,7 @@ class HiddenLayer(object):
 
         :type activation: theano.Op or function
         :param activation: Non linearity to be applied in the hidden
-                           layer
+                           layer (example: T.tanh)
         """
         self.input = input
         # end-snippet-1
@@ -305,7 +308,8 @@ class ConvPoolLayer(object):
         # reshape it to a tensor of shape (1, n_filters, 1, 1). Each bias will
         # thus be broadcasted across mini-batches and feature map
         # width & height
-        self.output = T.tanh(pooled_out + self.b.dimshuffle('x', 0, 'x', 'x'))
+        #self.output = T.tanh(pooled_out + self.b.dimshuffle('x', 0, 'x', 'x'))
+        self.output = relu(pooled_out + self.b.dimshuffle('x', 0, 'x', 'x'))
 
         # store parameters of this layer
         self.params = [self.W, self.b]
