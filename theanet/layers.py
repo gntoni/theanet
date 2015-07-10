@@ -195,9 +195,9 @@ class HiddenLayer(object):
         #        tanh.
         if W is None:
             W_values = np.asarray(
-                rng.normal(
-                    loc=0.0, # mean
-                    scale=0.01, # std
+                rng.uniform(
+                    low=-np.sqrt(6. / (n_in + n_out)),
+                    high=np.sqrt(6. / (n_in + n_out)),
                     size=(n_in, n_out)
                 ),
                 dtype=theano.config.floatX
@@ -208,7 +208,7 @@ class HiddenLayer(object):
             W = theano.shared(value=W_values, name='W', borrow=True)
 
         if b is None:
-            b_values = np.ones((n_out,), dtype=theano.config.floatX)
+            b_values = np.zeros((n_out,), dtype=theano.config.floatX)
             b = theano.shared(value=b_values, name='b', borrow=True)
 
         self.W = W
@@ -267,24 +267,24 @@ class ConvPoolLayer(object):
 
         # there are "num input feature maps * filter height * filter width"
         # inputs to each hidden unit
-        #fan_in = np.prod(filter_shape[1:])
+        fan_in = np.prod(filter_shape[1:])
         # each unit in the lower layer receives a gradient from:
         # "num output feature maps * filter height * filter width" /
         #   pooling size
-        #fan_out = (filter_shape[0] * np.prod(filter_shape[2:]) /
-        #           np.prod(poolsize))
+        fan_out = (filter_shape[0] * np.prod(filter_shape[2:]) /
+                   np.prod(poolsize))
         # initialize weights with random weights
-        #W_bound = np.sqrt(6. / (fan_in + fan_out))
+        W_bound = np.sqrt(6. / (fan_in + fan_out))
         self.W = theano.shared(
             np.asarray(
-                rng.normal(loc=0.0, scale=0.01, size=filter_shape),
+                rng.uniform(low=-W_bound, high=W_bound, size=filter_shape),
                 dtype=theano.config.floatX
             ),
             borrow=True
         )
 
         # the bias is a 1D tensor -- one bias per output feature map
-        b_values = np.ones((filter_shape[0],), dtype=theano.config.floatX)
+        b_values = np.zeros((filter_shape[0],), dtype=theano.config.floatX)
         self.b = theano.shared(value=b_values, borrow=True)
 
         # convolve input feature maps with filters
