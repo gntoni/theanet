@@ -19,7 +19,7 @@ import theano
 import theano.tensor as T
 from theano.tensor.signal import downsample
 from theano.tensor.nnet import conv
-from sicipy.stats import bernoulli
+from scipy.stats import bernoulli
 
 # Implementation of the ReLU activation function
 def relu(x):
