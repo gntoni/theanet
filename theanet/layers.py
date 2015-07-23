@@ -185,7 +185,7 @@ class HiddenLayer(object):
         """
         # dropout input
         if not validating:
-            input = input * bernoulli.rvs(dropout_prob, size= n_in) 
+            input = input * np.asarray(bernoulli.rvs(dropout_prob, size= n_in), dtype=theano.config.floatX)
 
         # end-snippet-1
 
@@ -304,7 +304,7 @@ class ConvPoolLayer(object):
         if validating:
             W = T.mul(self.W, dropout_prob)
         else:
-            input = input * bernoulli.rvs(dropout_prob, size= image_shape) 
+            input = input * np.asarray(bernoulli.rvs(dropout_prob, size= image_shape), dtype=theano.config.floatX)
 
         # convolve input feature maps with filters
         conv_out = conv.conv2d(
