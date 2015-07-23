@@ -19,6 +19,7 @@ import theano
 import theano.tensor as T
 from theano.tensor.signal import downsample
 from theano.tensor.nnet import conv
+from sicipy.stats import bernoulli
 
 # Implementation of the ReLU activation function
 def relu(x):
@@ -152,7 +153,7 @@ class LogisticRegression(object):
 
 class HiddenLayer(object):
     def __init__(self, rng, input, n_in, n_out, W=None, b=None,
-                 activation=relu):
+                 activation=relu, dropout_prob=1, validating=True):
         """
         Typical hidden layer of a MLP: units are fully-connected and have
         sigmoidal activation function. Weight matrix W is of shape (n_in,n_out)
@@ -177,8 +178,15 @@ class HiddenLayer(object):
         :type activation: theano.Op or function
         :param activation: Non linearity to be applied in the hidden
                            layer (example: T.tanh)
+
+        :type validating: bool
+        :param validating: False when training
+
         """
-        self.input = input
+        # dropout input
+        if not validating:
+            input = input * bernoulli.rvs(dropout_prob, size= n_in) 
+
         # end-snippet-1
 
         # `W` is initialized with `W_values` which is uniformely sampled
@@ -211,6 +219,8 @@ class HiddenLayer(object):
             b_values = np.zeros((n_out,), dtype=theano.config.floatX)
             b = theano.shared(value=b_values, name='b', borrow=True)
 
+        if validating:
+            W = T.mul(W, dropout_prob)
         self.W = W
         self.b = b
 
@@ -228,7 +238,7 @@ class HiddenLayer(object):
 class ConvPoolLayer(object):
     """Pool Layer of a convolutional network """
 
-    def __init__(self, rng, input, filter_shape, image_shape, poolsize=(2, 2),border_mode='valid',subsample=(1,1)):
+    def __init__(self, rng, input, filter_shape, image_shape, poolsize=(2, 2),border_mode='valid',subsample=(1,1),dropout_prob=1, validating=True):
         """
         Allocate a ConvPoolLayer with shared variable internal parameters.
 
@@ -259,6 +269,9 @@ class ConvPoolLayer(object):
         :param subsample: factor by which to subsample the output.
                           Also called strides elsewhere.
 
+        :type validating: bool
+        :param validating: False when training
+
         """
 
         assert image_shape[1] == filter_shape[1]
@@ -286,6 +299,12 @@ class ConvPoolLayer(object):
         # the bias is a 1D tensor -- one bias per output feature map
         b_values = np.zeros((filter_shape[0],), dtype=theano.config.floatX)
         self.b = theano.shared(value=b_values, borrow=True)
+
+        # dropout input
+        if validating:
+            W = T.mul(self.W, dropout_prob)
+        else:
+            input = input * bernoulli.rvs(dropout_prob, size= image_shape) 
 
         # convolve input feature maps with filters
         conv_out = conv.conv2d(
